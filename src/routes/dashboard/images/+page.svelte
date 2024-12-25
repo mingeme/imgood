@@ -1,6 +1,12 @@
 <script lang='ts'>
+  import { enhance } from '$app/forms';
+  import { writable } from 'svelte/store';
+
   const { data } = $props();
   const { images } = $derived(data);
+
+  const deletingStates = writable<Record<string, boolean>>({});
+
   function formatFileSize(bytes: number): string {
     if (bytes === 0)
       return '0 Bytes';
@@ -49,9 +55,12 @@
                   <button class='button is-primary' onclick={() => navigator.clipboard.writeText(`/api/images/${image.oss_key}`)}>
                     Copy URL
                   </button>
-                  <button class='button is-danger'>
-                    Delete
-                  </button>
+                  <form method='POST' action='?/delete' use:enhance={() => { deletingStates.update(states => ({ ...states, [image.oss_key]: true })); }}>
+                    <input type='hidden' name='oss_key' value={image.oss_key} />
+                    <button class='button is-danger' type='submit' disabled={$deletingStates[image.oss_key]} class:is-loading={$deletingStates[image.oss_key]}>
+                      Delete
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>

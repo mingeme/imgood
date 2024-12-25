@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 
 export async function load({ locals: { supabase, user } }) {
   const { data, error } = await supabase.from('image')
@@ -13,9 +13,7 @@ export async function load({ locals: { supabase, user } }) {
   }
 
   const imagesWithUrls = await Promise.all(data.map(async (image) => {
-    // 拼接公开 URL，并固定添加查询参数 w=50, h=50, mode=clip
     const publicUrl = `https://${env.BUCKET}.s3.bitiful.net/${image.oss_key}?w=50&h=50&mode=clip`;
-
     return {
       ...image,
       url: publicUrl,
@@ -26,3 +24,22 @@ export async function load({ locals: { supabase, user } }) {
     images: imagesWithUrls,
   };
 }
+
+export const actions = {
+  delete: async ({ request, locals: { supabase, user } }) => {
+    const formData = await request.formData();
+    const ossKey = formData.get('oss_key') as string;
+
+    const { error: supabaseError } = await supabase
+      .from('image')
+      .delete()
+      .eq('user_id', user?.id)
+      .eq('oss_key', ossKey);
+    if (supabaseError) {
+      return fail(500, { message: 'Failed to delete image from Supabase' });
+    }
+
+    // TODO delete oss
+    return { success: true };
+  },
+};
