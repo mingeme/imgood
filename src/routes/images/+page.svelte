@@ -1,7 +1,7 @@
 <script lang='ts'>
   import { enhance } from '$app/forms';
 
-  const { data, form } = $props();
+  const { data } = $props();
   const { images } = $derived(data);
 
   const modalState = $state({ ossKey: '', isActive: false, isLoading: false });
