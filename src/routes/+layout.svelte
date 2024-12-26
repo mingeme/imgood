@@ -39,6 +39,10 @@
   <div id='navbarExampleTransparentExample' class='navbar-menu'>
     <div class='navbar-start'>
       <a class='navbar-item' href='/'> Home </a>
+      {#if user}
+        <a class='navbar-item' href='/images'> Images </a>
+      {/if}
+
     </div>
 
     <div class='navbar-end'>

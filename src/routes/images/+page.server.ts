@@ -1,4 +1,6 @@
 import { env } from '$env/dynamic/private';
+import { client } from '$lib/oss';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { fail, redirect } from '@sveltejs/kit';
 
 export async function load({ locals: { supabase, user } }) {
@@ -13,10 +15,12 @@ export async function load({ locals: { supabase, user } }) {
   }
 
   const imagesWithUrls = await Promise.all(data.map(async (image) => {
-    const publicUrl = `https://${env.BUCKET}.s3.bitiful.net/${image.oss_key}?w=50&h=50&mode=clip`;
+    const publicUrl = `https://${env.BUCKET}.s3.bitiful.net/${image.oss_key}`;
+    const previewUrl = `${publicUrl}?w=50&h=50&mode=clip`;
     return {
       ...image,
-      url: publicUrl,
+      publicUrl,
+      previewUrl,
     };
   }));
 
@@ -28,7 +32,7 @@ export async function load({ locals: { supabase, user } }) {
 export const actions = {
   delete: async ({ request, locals: { supabase, user } }) => {
     const formData = await request.formData();
-    const ossKey = formData.get('oss_key') as string;
+    const ossKey = formData.get('ossKey') as string;
 
     const { error: supabaseError } = await supabase
       .from('image')
@@ -39,7 +43,17 @@ export const actions = {
       return fail(500, { message: 'Failed to delete image from Supabase' });
     }
 
-    // TODO delete oss
+    try {
+      await client.send(new DeleteObjectCommand({
+        Bucket: env.BUCKET,
+        Key: ossKey,
+      }));
+    }
+    catch (error) {
+      console.error('删除 OSS 对象失败:', error);
+      return fail(500, { message: '从 OSS 删除图片失败' });
+    }
+
     return { success: true };
   },
 };

@@ -8,7 +8,7 @@ export const actions = {
     const { error } = await supabase.auth.signInWithPassword(data);
 
     if (error) {
-      if (error instanceof AuthApiError && error.status === 400) {
+      if (error instanceof AuthApiError && error.staartus === 400) {
         return fail(400, {
           error: 'Invalid credentials',
         });

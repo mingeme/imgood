@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { client } from '$lib/oss';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { json, type RequestHandler } from '@sveltejs/kit';
@@ -16,15 +17,6 @@ function toBase62(num: number): string {
   }
   return encoded;
 }
-
-const client = new S3Client({
-  endpoint: env.ENDPOINT,
-  region: env.REGION,
-  credentials: {
-    accessKeyId: env.ACCESS_KEY_ID,
-    secretAccessKey: env.SECRET_ACCESS_KEY,
-  },
-});
 
 export const POST: RequestHandler = async ({ request, locals: { supabase, user } }) => {
   const data = await request.json();

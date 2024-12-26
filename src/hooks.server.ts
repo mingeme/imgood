@@ -67,7 +67,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
   event.locals.session = session;
   event.locals.user = user;
 
-  const pathAllowedList = ['upload', '/dashboard'];
+  const pathAllowedList = ['upload', '/images'];
 
   if (!event.locals.user) {
     for (const path in pathAllowedList) {
