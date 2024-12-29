@@ -6,16 +6,18 @@
   const { user } = $derived(data);
   let selectedFiles = $state<FileWithPreview[]>([]);
 
-  function handleFilesSelected(files: File[]) {
-    selectedFiles = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+  function handleFilesSelected(files: FileWithPreview[]) {
+    selectedFiles = [...selectedFiles, ...files];
   }
 
   function clearFiles() {
     selectedFiles.forEach(file => URL.revokeObjectURL(file.preview));
     selectedFiles = [];
+  }
+
+  function handleRemove(index: number) {
+    URL.revokeObjectURL(selectedFiles[index].preview);
+    selectedFiles = selectedFiles.filter((_, i) => i !== index);
   }
 </script>
 
@@ -29,6 +31,7 @@
     {user}
     files={selectedFiles}
     onFilesSelected={handleFilesSelected}
+    onRemove={handleRemove}
     onClear={clearFiles}
   />
 </div>

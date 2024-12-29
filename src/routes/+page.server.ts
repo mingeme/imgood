@@ -18,9 +18,24 @@ function toBase62(num: number): string {
 export const actions = {
   upload: async ({ request, locals: { supabase, user } }) => {
     const data = await request.json();
-    const name = data.name;
+    const { name, hash } = data;
     const timestampBase62 = toBase62(Date.now());
     const key = `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${timestampBase62}`;
+
+    const { data: existingImages, error: checkError } = await supabase
+      .from('image')
+      .select('id')
+      .eq('hash', hash)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error(checkError);
+      return fail(500, { message: 'Failed to check for existing image' });
+    }
+
+    if (existingImages) {
+      return fail(400, { message: 'This image has already been uploaded.' });
+    }
 
     const putCmd = new PutObjectCommand({
       Bucket: env.BUCKET,
@@ -37,7 +52,7 @@ export const actions = {
       name,
       user_id: user?.id,
       oss_key: key,
-      hash: data.hash,
+      hash,
       file_size: data.size,
     });
 
@@ -48,4 +63,4 @@ export const actions = {
 
     return { url, key };
   },
-}; 
+};

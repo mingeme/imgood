@@ -1,19 +1,108 @@
 <script lang='ts'>
   import type { FileWithPreview } from '$lib/types';
   import { calculateFileHash } from '$lib/utils/file';
+  import { onDestroy, onMount } from 'svelte';
 
-  const { user, files, onFilesSelected, onClear } = $props<{
+  const { user, files, onFilesSelected, onRemove, onClear } = $props<{
     user: any;
     files: FileWithPreview[];
-    onFilesSelected: (files: File[]) => void;
+    onFilesSelected: (files: FileWithPreview[]) => void;
+    onRemove: (index: number) => void;
     onClear: () => void;
   }>();
 
+  let dragCounter = $state(0);
+
+  function handleGlobalPaste(e: ClipboardEvent) {
+    if (!user)
+      return;
+    const pastedFiles = Array.from(e.clipboardData?.files ?? [])
+      .filter(file => file.type.startsWith('image/'));
+    if (pastedFiles.length > 0) {
+      getUniqueFiles(pastedFiles).then((uniqueFiles) => {
+        if (uniqueFiles.length > 0) {
+          onFilesSelected(uniqueFiles);
+        }
+      });
+    }
+  }
+
+  onMount(() => {
+    if (import.meta.env.SSR)
+      return;
+    document.addEventListener('paste', handleGlobalPaste);
+  });
+
+  onDestroy(() => {
+    if (import.meta.env.SSR)
+      return;
+    document.removeEventListener('paste', handleGlobalPaste);
+  });
+
+  function handleDragEnter(e: DragEvent) {
+    e.preventDefault();
+    dragCounter++;
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    dragCounter--;
+  }
+
+  async function createFileWithPreview(file: File): Promise<FileWithPreview> {
+    if (!file || !(file instanceof File)) {
+      throw new Error('Invalid file');
+    }
+    const hash = await calculateFileHash(file);
+    const preview = URL.createObjectURL(file);
+
+    return { file, preview, hash };
+  }
+
+  async function getUniqueFiles(filesArray: File[]): Promise<FileWithPreview[]> {
+    const seenHashes = new Set<string>(files.map((existingFile: FileWithPreview) => existingFile.hash));
+
+    const filesWithHash = await Promise.all(filesArray.map(async (file) => {
+      if (file instanceof File) {
+        return createFileWithPreview(file);
+      }
+      else {
+        console.error('Invalid file:', file);
+        return null;
+      }
+    }));
+
+    return filesWithHash.filter((newFile): newFile is FileWithPreview => {
+      if (newFile === null)
+        return false;
+
+      if (seenHashes.has(newFile.hash)) {
+        return false;
+      }
+
+      seenHashes.add(newFile.hash);
+      return true;
+    });
+  }
+
+  async function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    dragCounter = 0;
+    if (!user)
+      return;
+
+    const droppedFiles = Array.from(e.dataTransfer?.files ?? [])
+      .filter(file => file.type.startsWith('image/'));
+    if (droppedFiles.length > 0) {
+      const uniqueFiles = await getUniqueFiles(droppedFiles);
+      if (uniqueFiles.length > 0) {
+        onFilesSelected(uniqueFiles);
+      }
+    }
+  }
+
   function removeFile(index: number) {
-    URL.revokeObjectURL(files[index].preview);
-    const newFiles = [...files];
-    newFiles.splice(index, 1);
-    onFilesSelected(newFiles.map(f => f.file));
+    onRemove(index);
   }
 
   async function upload() {
@@ -32,9 +121,9 @@
         console.error('Upload failed:', result.error);
         continue;
       }
-      const { data } = result;
-      await fetch(data.url, {
-        method: 'PUT',
+      const { url } = result.data;
+      await fetch(url, {
+        method: 'POST',
         body: file,
       });
     }
@@ -47,6 +136,13 @@
     <div
       class='container file-label is-responsive'
       class:cursor-default={!user}
+      class:is-dragover={dragCounter > 0}
+      role='button'
+      tabindex='0'
+      ondragenter={handleDragEnter}
+      ondragleave={handleDragLeave}
+      ondragover={e => e.preventDefault()}
+      ondrop={handleDrop}
     >
       <span class='image-upload-content'>
         {#if !user}
@@ -54,14 +150,14 @@
             You need to <a href='/signin'>sign in</a> before you can upload images
           </div>
         {:else if files.length > 0}
-          {#each files as { preview, file }}
+          {#each files as { preview, file }, i}
             <div class='preview-container'>
               <button
                 type='button'
                 class='delete-button'
                 onclick={(e) => {
                   e.stopPropagation();
-                  removeFile(files.findIndex((f: FileWithPreview) => f.preview === preview));
+                  removeFile(i);
                 }}
                 aria-label='Delete image'
               >
@@ -100,9 +196,13 @@
           name='image'
           accept='.jpg, .jpeg, .png, .gif, .bmp'
           multiple
-          onchange={(e: Event) => {
+          onchange={async (e: Event) => {
             const target = e.target as HTMLInputElement;
-            onFilesSelected(Array.from(target.files ?? []));
+            const filesArray = Array.from(target.files ?? []);
+            const uniqueFiles = await getUniqueFiles(filesArray);
+            if (uniqueFiles.length > 0) {
+              onFilesSelected(uniqueFiles);
+            }
           }}
         />
         <span class='select-files'>Select images...</span>
@@ -173,11 +273,13 @@
     min-height: 20rem;
     border: 2px dashed var(--bulma-border);
     border-radius: 0.5rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
   }
 
-  .image-upload-height:hover {
+  .image-upload-height:hover,
+  .is-dragover {
     border-color: var(--bulma-primary);
+    background-color: rgba(var(--bulma-primary-rgb), 0.05);
   }
 
   .image-upload-content {
