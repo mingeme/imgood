@@ -1,5 +1,6 @@
 <script lang='ts'>
   import type { FileWithPreview } from '$lib/types';
+  import { deserialize } from '$app/forms';
   import { calculateFileHash } from '$lib/utils/file';
   import { onDestroy, onMount } from 'svelte';
 
@@ -116,16 +117,26 @@
           hash,
         }),
       });
-      const result = await res.json();
-      if (result.type !== 'success') {
-        console.error('Upload failed:', result.error);
-        continue;
+      const result = deserialize(await res.text());
+      const { type } = result;
+
+      if (type === 'success') {
+        const url = result.data?.url as string;
+        await fetch(url, {
+          method: 'PUT',
+          body: file,
+        });
       }
-      const { url } = result.data;
-      await fetch(url, {
-        method: 'POST',
-        body: file,
-      });
+      else if (type === 'failure') {
+        const { data } = result;
+        console.error('Upload failed:', data?.message);
+      }
+      else if (type === 'error') {
+        console.error('Upload error:', result.error);
+      }
+      else if (type === 'redirect') {
+      // Handle redirect if necessary
+      }
     }
     window.location.reload();
   }

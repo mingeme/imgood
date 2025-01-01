@@ -5,4 +5,4 @@ export async function calculateFileHash(file: File): Promise<string> {
   return hashArray
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-} 
+}
