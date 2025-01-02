@@ -67,18 +67,15 @@ const authGuard: Handle = async ({ event, resolve }) => {
   event.locals.session = session;
   event.locals.user = user;
 
-  const pathAllowedList = ['upload', '/images'];
+  const privatePaths = ['/upload', '/images'];
+  const authPaths = ['/signin', '/signup', '/reset-password', '/update-password'];
 
-  if (!event.locals.user) {
-    for (const path in pathAllowedList) {
-      if (event.url.pathname.startsWith(path)) {
-        redirect(303, '/signin');
-      }
-    }
+  if (!event.locals.user && privatePaths.includes(event.url.pathname)) {
+    redirect(303, '/signin');
   }
 
-  if (event.locals.user && event.url.pathname === '/auth') {
-    redirect(303, '/private');
+  if (event.locals.user && authPaths.includes(event.url.pathname)) {
+    redirect(303, '/');
   }
 
   return resolve(event);

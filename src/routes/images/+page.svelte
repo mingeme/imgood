@@ -60,9 +60,9 @@
               <td>{formatDate(image.created_at)}</td>
               <td>
                 <div class='buttons are-small'>
-                  <button class='button is-info' onclick={() => window.open(`/api/images/${image.oss_key}`)}>
+                  <a href={`/images/${image.id}`} class='button is-info'>
                     View Image
-                  </button>
+                  </a>
                   <button class='button is-primary' onclick={async () => {
                     await navigator.clipboard.writeText(image.publicUrl);
                     copiedStates[image.oss_key] = true;

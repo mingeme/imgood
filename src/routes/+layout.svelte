@@ -68,19 +68,19 @@
     </div>
 
     <div class='navbar-end'>
-      <div class='navbar-item'>
-        {#if user}
-          <div class='navbar-item has-dropdown is-hoverable'>
-            <div class='navbar-link user-email'>
-              <span>{user.email}</span>
-            </div>
-            <div class='navbar-dropdown is-right'>
-              <form action='/signout' method='POST' class='navbar-item'>
-                <button type='submit' class='button is-ghost w-full text-left'>Sign out</button>
-              </form>
-            </div>
+      {#if user}
+        <div class='navbar-item has-dropdown is-hoverable'>
+          <div class='navbar-link user-email'>
+            <span>{user.email}</span>
           </div>
-        {:else}
+          <div class='navbar-dropdown is-right'>
+            <form action='/signout' method='GET' class='navbar-item'>
+              <button type='submit' class='button is-ghost w-full text-left'>Sign out</button>
+            </form>
+          </div>
+        </div>
+      {:else}
+        <div class='navbar-item'>
           <div class='field is-grouped auth-buttons'>
             <p class='control'>
               <a class='button' class:is-active={$page.url.pathname === '/signin'} href='/signin'>
@@ -93,8 +93,8 @@
               </a>
             </p>
           </div>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
   </div>
 </nav>
@@ -134,12 +134,7 @@
   }
 
   .navbar-dropdown {
-    background-color: #363636;
     border-top: 2px solid #00d1b2;
-  }
-
-  .navbar-divider {
-    background-color: #4a4a4a;
   }
 
   .button.is-ghost {
