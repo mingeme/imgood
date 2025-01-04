@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user } 
     throw error(500, 'Error fetching image');
   }
 
-  const url = `https://${env.BUCKET}.s3.bitiful.net/${image.oss_key}`;
+  const url = `https://${env.BUCKET}.${env.DOMAIN}/${image.oss_key}`;
 
   return {
     image,

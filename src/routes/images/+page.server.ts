@@ -15,7 +15,7 @@ export async function load({ locals: { supabase, user } }) {
   }
 
   const imagesWithUrls = await Promise.all(data.map(async (image) => {
-    const publicUrl = `https://${env.BUCKET}.s3.bitiful.net/${image.oss_key}`;
+    const publicUrl = `https://${env.BUCKET}.${env.DOMAIN}/${image.oss_key}`;
     const previewUrl = `${publicUrl}?w=50&h=50&mode=clip`;
     return {
       ...image,
