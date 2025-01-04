@@ -57,7 +57,7 @@
     const hash = await calculateFileHash(file);
     const preview = URL.createObjectURL(file);
 
-    return { file, preview, hash };
+    return { file, preview, hash, status: 'pending' };
   }
 
   async function getUniqueFiles(filesArray: File[]): Promise<FileWithPreview[]> {
@@ -107,13 +107,16 @@
   }
 
   async function upload() {
-    for (const { file } of files) {
-      const hash = await calculateFileHash(file);
+    for (const fileWithPreview of files) {
+      if (fileWithPreview.status !== 'pending')
+        continue;
+      fileWithPreview.status = 'uploading';
+      const hash = await calculateFileHash(fileWithPreview.file);
       const res = await fetch('?/upload', {
         method: 'POST',
         body: JSON.stringify({
-          name: file.name,
-          size: file.size,
+          name: fileWithPreview.file.name,
+          size: fileWithPreview.file.size,
           hash,
         }),
       });
@@ -124,21 +127,17 @@
         const url = result.data?.url as string;
         await fetch(url, {
           method: 'PUT',
-          body: file,
+          body: fileWithPreview.file,
         });
+        fileWithPreview.status = 'success';
       }
       else if (type === 'failure') {
-        const { data } = result;
-        console.error('Upload failed:', data?.message);
+        fileWithPreview.status = 'duplicated';
       }
       else if (type === 'error') {
-        console.error('Upload error:', result.error);
-      }
-      else if (type === 'redirect') {
-      // Handle redirect if necessary
+        fileWithPreview.status = 'error';
       }
     }
-    window.location.reload();
   }
 </script>
 
@@ -161,7 +160,7 @@
             You need to <a href='/signin'>sign in</a> before you can upload images
           </div>
         {:else if files.length > 0}
-          {#each files as { preview, file }, i}
+          {#each files as { preview, file, status }, i}
             <div class='preview-container'>
               <button
                 type='button'
@@ -179,9 +178,34 @@
                 alt={file.name}
                 class='preview-image'
               />
-              <span class='file-name is-small' title={file.name}>
-                {file.name}
-              </span>
+              <div class='file-info'>
+                <span class='file-name is-small' title={file.name}>
+                  {file.name}
+                </span>
+                {#if status !== 'pending'}
+                  <div class='progress-container'>
+                    <progress
+                      class='progress is-small'
+                      class:is-success={status === 'success'}
+                      class:is-danger={status === 'error' || status === 'duplicated'}
+                      class:is-primary={status === 'uploading'}
+                      max='100'
+                      value={status === 'uploading' ? 20 : 100}
+                    ></progress>
+                    <span class='status-text' class:has-text-success={status === 'success'} class:has-text-danger={status === 'error' || status === 'duplicated'}>
+                      {#if status === 'uploading'}
+                        Uploading...
+                      {:else if status === 'success'}
+                        Upload completed
+                      {:else if status === 'error'}
+                        Upload failed
+                      {:else if status === 'duplicated'}
+                        Already exists
+                      {/if}
+                    </span>
+                  </div>
+                {/if}
+              </div>
             </div>
           {/each}
         {:else}
@@ -242,6 +266,7 @@
 
 <style>
   .preview-container {
+    max-width: 200px;
     position: relative;
     display: inline-block;
     margin: 0.5rem;
@@ -325,5 +350,49 @@
 
   .select-button {
     margin-left: 0.5rem;
+  }
+
+  .progress-container {
+    position: relative;
+    margin-top: 0.5rem;
+  }
+
+  .status-text {
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: #4a4a4a;
+  }
+
+  .status-text.has-text-success {
+    color: #48c774;
+  }
+
+  .status-text.has-text-danger {
+    color: #f14668;
+  }
+
+  .progress {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    height: 4px;
+  }
+
+  .progress::-webkit-progress-value {
+    transition: width 0.3s ease;
+  }
+
+  .progress.is-success::-webkit-progress-value {
+    background-color: #48c774;
+  }
+
+  .progress.is-danger::-webkit-progress-value {
+    background-color: #f14668;
+  }
+
+  .progress.is-primary::-webkit-progress-value {
+    background-color: #00d1b2;
   }
 </style>

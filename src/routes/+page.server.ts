@@ -2,7 +2,7 @@ import { env } from '$env/dynamic/private';
 import { client } from '$lib/oss';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 
 const base62Chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -48,7 +48,7 @@ export const actions = {
       unsignableHeaders: new Set(['content-disposition']),
     });
 
-    const { error } = await supabase.from('image').insert({
+    const { error: checkErr } = await supabase.from('image').insert({
       name,
       user_id: user?.id,
       oss_key: key,
@@ -56,9 +56,9 @@ export const actions = {
       file_size: data.size,
     });
 
-    if (error) {
-      console.error(error);
-      return fail(500, { message: 'Failed to save image info' });
+    if (checkErr) {
+      console.error(checkErr);
+      return error(500, { message: 'Failed to save image info' });
     }
 
     return { url, key };

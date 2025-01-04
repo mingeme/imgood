@@ -21,7 +21,7 @@
   }
 </script>
 
-<div class='container is-max-tablet px-4'>
+<div class='container is-max-desktop px-4'>
   <div class='image-upload-title'>
     <h1 class='title is-4'>Image Upload</h1>
     <p>5 MB max per file. 10 files max per request.</p>
