@@ -12,7 +12,8 @@
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"supabase:gen": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/lib/database.types.ts"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.699.0",

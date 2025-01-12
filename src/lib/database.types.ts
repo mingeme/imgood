@@ -17,6 +17,8 @@ export type Database = {
           id: number
           name: string
           oss_key: string
+          preview_url: string
+          url: string
           user_id: string
         }
         Insert: {
@@ -26,6 +28,8 @@ export type Database = {
           id?: number
           name: string
           oss_key: string
+          preview_url?: string
+          url?: string
           user_id: string
         }
         Update: {
@@ -35,6 +39,8 @@ export type Database = {
           id?: number
           name?: string
           oss_key?: string
+          preview_url?: string
+          url?: string
           user_id?: string
         }
         Relationships: []

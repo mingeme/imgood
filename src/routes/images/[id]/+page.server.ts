@@ -1,5 +1,4 @@
 import type { PageServerLoad } from './$types';
-import { env } from '$env/dynamic/private';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, user } }) => {
@@ -22,10 +21,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, user } 
     throw error(500, 'Error fetching image');
   }
 
-  const url = `https://${env.BUCKET}.${env.DOMAIN}/${image.oss_key}`;
-
   return {
     image,
-    url,
   };
 };

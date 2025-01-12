@@ -1,7 +1,7 @@
 <script lang='ts'>
-  import type { PageData } from './$types';
 
-  export let data: PageData;
+  const { data } = $props();
+  const { image } = $derived(data);
 </script>
 
 <div class='hero'>
@@ -11,8 +11,8 @@
         <div class='column is-10'>
           <div class='box p-0'>
             <img
-              src={data.url}
-              alt={data.image.name}
+              src={image.url}
+              alt={image.name}
               style='object-fit: contain; max-height: 85dvh;'
             />
           </div>

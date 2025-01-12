@@ -51,10 +51,10 @@
           {#each images as image}
             <tr>
               <td>
-                <img src={image.previewUrl} alt={image.name} />
+                <img src={image.preview_url} alt={image.name} />
               </td>
               <td>
-                <a href={image.publicUrl}>{image.name}</a>
+                <a href={image.url}>{image.name}</a>
               </td>
               <td>{formatFileSize(image.file_size)}</td>
               <td>{formatDate(image.created_at)}</td>
@@ -64,7 +64,7 @@
                     View Image
                   </a>
                   <button class='button is-primary' onclick={async () => {
-                    await navigator.clipboard.writeText(image.publicUrl);
+                    await navigator.clipboard.writeText(image.url);
                     copiedStates[image.oss_key] = true;
                     setTimeout(() => copiedStates[image.oss_key] = false, 2000);
                   }}>

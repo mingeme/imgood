@@ -14,18 +14,8 @@ export async function load({ locals: { supabase, user } }) {
     redirect(303, '/error');
   }
 
-  const imagesWithUrls = await Promise.all(data.map(async (image) => {
-    const publicUrl = `https://${env.BUCKET}.${env.DOMAIN}/${image.oss_key}`;
-    const previewUrl = `${publicUrl}?w=50&h=50&mode=clip`;
-    return {
-      ...image,
-      publicUrl,
-      previewUrl,
-    };
-  }));
-
   return {
-    images: imagesWithUrls,
+    images: data,
   };
 }
 
@@ -50,8 +40,8 @@ export const actions = {
       }));
     }
     catch (error) {
-      console.error('删除 OSS 对象失败:', error);
-      return fail(500, { message: '从 OSS 删除图片失败' });
+      console.error('Delete image from OSS failed', error);
+      return fail(500, { message: 'Delete image from OSS failed' });
     }
 
     return { success: true };

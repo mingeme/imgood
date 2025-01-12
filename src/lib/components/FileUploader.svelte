@@ -4,10 +4,11 @@
   import { calculateFileHash } from '$lib/utils/file';
   import { onDestroy, onMount } from 'svelte';
 
-  const { user, files, onFilesSelected, onRemove, onClear } = $props<{
+  const { user, files, onFilesSelected, onUploadSuccess, onRemove, onClear } = $props<{
     user: any;
     files: FileWithPreview[];
     onFilesSelected: (files: FileWithPreview[]) => void;
+    onUploadSuccess: (url: string) => void;
     onRemove: (index: number) => void;
     onClear: () => void;
   }>();
@@ -102,10 +103,6 @@
     }
   }
 
-  function removeFile(index: number) {
-    onRemove(index);
-  }
-
   async function upload() {
     for (const fileWithPreview of files) {
       if (fileWithPreview.status !== 'pending')
@@ -124,12 +121,13 @@
       const { type } = result;
 
       if (type === 'success') {
-        const url = result.data?.url as string;
-        await fetch(url, {
+        const { signedUrl, url } = result.data as { signedUrl: string; url: string };
+        await fetch(signedUrl, {
           method: 'PUT',
           body: fileWithPreview.file,
         });
         fileWithPreview.status = 'success';
+        onUploadSuccess(url);
       }
       else if (type === 'failure') {
         fileWithPreview.status = 'duplicated';
@@ -167,7 +165,7 @@
                 class='delete-button'
                 onclick={(e) => {
                   e.stopPropagation();
-                  removeFile(i);
+                  onRemove(i);
                 }}
                 aria-label='Delete image'
               >
@@ -192,7 +190,9 @@
                       max='100'
                       value={status === 'uploading' ? 20 : 100}
                     ></progress>
-                    <span class='status-text' class:has-text-success={status === 'success'} class:has-text-danger={status === 'error' || status === 'duplicated'}>
+                    <span class='status-text'
+                          class:has-text-success={status === 'success'}
+                          class:has-text-danger={status === 'error' || status === 'duplicated'}>
                       {#if status === 'uploading'}
                         Uploading...
                       {:else if status === 'success'}
@@ -366,14 +366,6 @@
     color: #4a4a4a;
   }
 
-  .status-text.has-text-success {
-    color: #48c774;
-  }
-
-  .status-text.has-text-danger {
-    color: #f14668;
-  }
-
   .progress {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
@@ -384,15 +376,4 @@
     transition: width 0.3s ease;
   }
 
-  .progress.is-success::-webkit-progress-value {
-    background-color: #48c774;
-  }
-
-  .progress.is-danger::-webkit-progress-value {
-    background-color: #f14668;
-  }
-
-  .progress.is-primary::-webkit-progress-value {
-    background-color: #00d1b2;
-  }
 </style>

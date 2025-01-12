@@ -1,18 +1,25 @@
 <script lang='ts'>
   import type { FileWithPreview } from '$lib/types';
   import FileUploader from '$lib/components/FileUploader.svelte';
+  import UrlTabs from '$lib/components/UrlTabs.svelte';
 
   const { data } = $props();
   const { user } = $derived(data);
   let selectedFiles = $state<FileWithPreview[]>([]);
+  let urls = $state<string[]>([]);
 
   function handleFilesSelected(files: FileWithPreview[]) {
     selectedFiles = [...selectedFiles, ...files];
   }
 
+  function handleUploadSuccess(url: string) {
+    urls = [...urls, url];
+  }
+
   function clearFiles() {
     selectedFiles.forEach(file => URL.revokeObjectURL(file.preview));
     selectedFiles = [];
+    urls = [];
   }
 
   function handleRemove(index: number) {
@@ -31,9 +38,12 @@
     {user}
     files={selectedFiles}
     onFilesSelected={handleFilesSelected}
+    onUploadSuccess={handleUploadSuccess}
     onRemove={handleRemove}
     onClear={clearFiles}
   />
+
+  <UrlTabs {urls} />
 </div>
 
 <style>

@@ -19,8 +19,9 @@ export const actions = {
   upload: async ({ request, locals: { supabase, user } }) => {
     const data = await request.json();
     const { name, hash } = data;
+    const ext = name.split('.').pop();
     const timestampBase62 = toBase62(Date.now());
-    const key = `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${timestampBase62}`;
+    const key = `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${timestampBase62}.${ext}`;
 
     const { data: existingImages, error: checkError } = await supabase
       .from('image')
@@ -43,10 +44,12 @@ export const actions = {
       Key: key,
     });
 
-    const url = await getSignedUrl(client, putCmd, {
+    const signedUrl = await getSignedUrl(client, putCmd, {
       expiresIn: 60 * 5,
       unsignableHeaders: new Set(['content-disposition']),
     });
+    const url = `https://${env.BUCKET}.${env.DOMAIN}/${key}`;
+    const previewUrl = `${url}?w=50&h=50&mode=clip`;
 
     const { error: checkErr } = await supabase.from('image').insert({
       name,
@@ -54,6 +57,8 @@ export const actions = {
       oss_key: key,
       hash,
       file_size: data.size,
+      url,
+      preview_url: previewUrl,
     });
 
     if (checkErr) {
@@ -61,6 +66,6 @@ export const actions = {
       return error(500, { message: 'Failed to save image info' });
     }
 
-    return { url, key };
+    return { signedUrl, url, key };
   },
 };

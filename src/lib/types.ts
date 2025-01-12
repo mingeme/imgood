@@ -7,5 +7,4 @@ export interface FileWithPreview {
 
 export interface UploadResponse {
   url: string;
-  // 其他响应字段...
 }
