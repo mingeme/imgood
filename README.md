@@ -2,6 +2,11 @@
 
 一个基于SvelteKit和Supabase构建的自托管图床服务。
 
+## 演示账号
+
+- **邮箱**: `user@example.com`
+- **密码**: `example`
+
 ## 技术栈
 
 - **前端框架**: SvelteKit 2.x + Svelte 5
