@@ -1,0 +1,7 @@
+# S3 Configuration
+[s3]
+bucket = ""
+endpoint = ""
+region = ""
+access_key = ""
+secret_key = ""

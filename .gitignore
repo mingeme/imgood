@@ -12,6 +12,9 @@ imgood
 # Output of the go coverage tool
 *.out
 
+# Configuration files
+config.toml
+
 # Dependency directories
 vendor/
 
