@@ -27,7 +27,7 @@
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = [ pkgs.vips ];
 
-            vendorHash = "sha256-lRm3D9xAIrr6BnY5wRzJaMlzEnNfxr5LFWVGbWmprwI=";
+            vendorHash = "sha256-OTBxAW5PeHjbFA+OPttVxTw1DVgKNtmShjeHEN/l71k=";
           };
         };
 

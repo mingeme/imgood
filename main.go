@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -191,9 +192,15 @@ func uploadCommand() {
 	// Compress the image if requested
 	imageData := buffer
 	if *compress {
+		// Determine original image format
+		imageType := bimg.DetermineImageType(buffer)
+		originalFormat := bimg.ImageTypeName(imageType)
+		fmt.Printf("Original format: %s\n", originalFormat)
+		
 		// Create options for processing
 		options := bimg.Options{
 			Quality: *quality,
+			Type:    bimg.WEBP, // Convert to WebP format for better compression
 		}
 
 		// Set width and height if provided
@@ -217,18 +224,30 @@ func uploadCommand() {
 	}
 
 	// Set up S3 client
-	cfg, err := configureAWS(*region, *accessKey, *secretKey, *endpoint)
+	cfg, err := configureAWS(*region, *accessKey, *secretKey)
 	if err != nil {
 		fmt.Printf("Error configuring AWS: %s\n", err)
 		os.Exit(1)
 	}
 
-	// Create S3 client
-	s3Client := s3.NewFromConfig(cfg)
+	// Create S3 client with options
+	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		if *endpoint != "" {
+			o.BaseEndpoint = aws.String(*endpoint)
+		}
+	})
 
 	// Set default key if not provided
 	if *key == "" {
-		*key = filepath.Base(*inputPath)
+		baseName := filepath.Base(*inputPath)
+		
+		// If we're compressing and converting to WebP, change the extension
+		if *compress {
+			// Remove original extension and add .webp
+			baseName = strings.TrimSuffix(baseName, filepath.Ext(baseName)) + ".webp"
+		}
+		
+		*key = baseName
 	}
 
 	// Upload to S3
@@ -236,7 +255,7 @@ func uploadCommand() {
 	_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(*bucket),
 		Key:    aws.String(*key),
-		Body:   strings.NewReader(string(imageData)),
+		Body:   bytes.NewReader(imageData),
 	})
 
 	if err != nil {
@@ -258,7 +277,7 @@ func uploadCommand() {
 }
 
 // configureAWS sets up the AWS configuration with the provided credentials and region
-func configureAWS(region, accessKey, secretKey, endpoint string) (aws.Config, error) {
+func configureAWS(region, accessKey, secretKey string) (aws.Config, error) {
 	configOptions := []func(*config.LoadOptions) error{
 		config.WithRegion(region),
 	}
@@ -270,21 +289,11 @@ func configureAWS(region, accessKey, secretKey, endpoint string) (aws.Config, er
 		))
 	}
 
-	// Add custom endpoint if provided
-	if endpoint != "" {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			if service == s3.ServiceID {
-				return aws.Endpoint{
-					URL:               endpoint,
-					HostnameImmutable: true,
-					SigningRegion:     region,
-				}, nil
-			}
-			// Fallback to default resolution
-			return aws.Endpoint{}, &aws.EndpointNotFoundError{}
-		})
-		configOptions = append(configOptions, config.WithEndpointResolverWithOptions(customResolver))
+	// Load the AWS configuration
+	cfg, err := config.LoadDefaultConfig(context.Background(), configOptions...)
+	if err != nil {
+		return cfg, err
 	}
 
-	return config.LoadDefaultConfig(context.Background(), configOptions...)
+	return cfg, nil
 }
