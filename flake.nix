@@ -22,7 +22,7 @@
         packages = {
           default = pkgs.buildGoModule {
             pname = "imgood";
-            version = "0.1.0";
+            version = "0.1.0-SNAPSHOT";
             src = ./.;
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = [ pkgs.vips ];
