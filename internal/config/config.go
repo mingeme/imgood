@@ -27,6 +27,7 @@ func Init() error {
 	home, err := os.UserHomeDir()
 	if err == nil {
 		viper.AddConfigPath(filepath.Join(home, ".imgood"))
+		viper.AddConfigPath(filepath.Join(home, ".config", "imgood"))
 	}
 
 	viper.SetEnvPrefix("IMGOOD")
