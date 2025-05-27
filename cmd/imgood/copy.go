@@ -18,7 +18,7 @@ func ExecuteCopy() {
 	// Define command line flags for copy operation
 	sourceKey := pflag.StringP("source", "s", "", "Source S3 object key to copy")
 	targetKey := pflag.StringP("target", "t", "", "Target S3 object key (destination)")
-	convertFormat := pflag.StringP("format", "f", "webp", "Convert to format (webp, jpeg, png)")
+	convertFormat := pflag.StringP("format", "f", "", "Convert to format (webp, jpeg, png)")
 	quality := pflag.IntP("quality", "q", 80, "Quality of the converted image (1-100)")
 	width := pflag.IntP("width", "w", 0, "Width of the output image (0 for original)")
 	height := pflag.IntP("height", "h", 0, "Height of the output image (0 for original)")
