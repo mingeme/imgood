@@ -1,6 +1,15 @@
-# Imgood - Image Compression Tool
+# ImgOod - Image Optimization and S3 Management Tool
 
-A simple command-line tool for image compression and S3 uploading using the [bimg](https://github.com/h2non/bimg) library, which is powered by libvips.
+A powerful command-line tool for image optimization, format conversion, and S3 object management, built with [bimg](https://github.com/h2non/bimg) (powered by libvips) and AWS SDK for Go v2.
+
+## Features
+
+- Image compression and resizing
+- Format conversion (WebP, JPEG, PNG)
+- S3 upload with customizable paths
+- S3 object copying with format conversion
+- Configuration via TOML files and environment variables
+- Support for custom S3-compatible storage services
 
 ## Prerequisites
 
@@ -30,131 +39,55 @@ yum install vips-devel
 ## Installation
 
 ```bash
-go mod download
-go build -o imgood
+go install github.com/mingeme/imgood@latest
 ```
 
-## Usage
-
-Imgood has two main commands:
-
-1. Default command (compression)
-2. Upload command (`up`) for S3 uploads
-
-### Compression Command
+Or build from source:
 
 ```bash
-./imgood --input <path-to-image> [--quality <1-100>] [--width <pixels>] [--height <pixels>]
+git clone https://github.com/mingeme/imgood.git
+cd imgood
+go build -o imgood ./cmd/imgood
 ```
 
-You can also use short flag options:
+## Commands
 
-```bash
-./imgood -i <path-to-image> [-q <1-100>] [-w <pixels>] [-h <pixels>]
-```
+ImgOod provides the following commands:
 
-#### Compression Options
-
-- `--input`, `-i`: Path to the input image file (required)
-- `--quality`, `-q`: Quality of the compressed image (1-100, default: 80)
-- `--width`, `-w`: Width of the output image (0 for original, default: 0)
-- `--height`, `-h`: Height of the output image (0 for original, default: 0)
-
-#### Compression Examples
-
-Using long options:
-
-```bash
-./imgood --input sample.jpg --quality 70 --width 800
-```
-
-Using short options:
-
-```bash
-./imgood -i sample.jpg -q 70 -w 800
-```
-
-This will compress `sample.jpg` with 70% quality and resize it to 800px width (maintaining aspect ratio), then save it to the system's temporary directory.
-
-### Upload Command (S3)
-
-```bash
-./imgood up --input <path-to-image> --bucket <bucket-name> [--key <object-key>] [--compress] [other options]
-```
-
-You can also use short flag options:
-
-```bash
-./imgood up -i <path-to-image> -b <bucket-name> [-k <object-key>] [-c] [other options]
-```
-
-#### Upload Options
-
-- `--input`, `-i`: Path to the input image file (required)
-- `--bucket`, `-b`: S3 bucket name (required)
-- `--key`, `-k`: S3 object key/path (default: original filename)
-- `--endpoint`, `-e`: S3 endpoint URL for non-AWS S3 services
-- `--region`, `-r`: AWS region (default: us-east-1)
-- `--access-key`, `-a`: AWS access key ID
-- `--secret-key`, `-s`: AWS secret access key
-- `--compress`, `-c`: Compress image before uploading (boolean flag)
-
-When `--compress` is specified, you can also use the compression options:
-
-- `--quality`, `-q`: Quality of the compressed image (1-100, default: 80)
-- `--width`, `-w`: Width of the output image (0 for original, default: 0)
-- `--height`, `-h`: Height of the output image (0 for original, default: 0)
-
-#### Upload Examples
-
-Upload an image to S3 without compression:
-
-```bash
-./imgood up -i sample.jpg -b my-images-bucket
-```
-
-Upload with compression and resizing:
-
-```bash
-./imgood up -i sample.jpg -b my-images-bucket -k images/sample-resized.jpg -c -q 75 -w 800
-```
-
-Use with MinIO or other S3-compatible storage:
-
-```bash
-./imgood up -i sample.jpg -b my-bucket -e http://minio-server:9000 -a myAccessKey -s mySecretKey
-```
+- `up`: Upload images to S3 with optional compression and format conversion
+- `cp`: Copy objects within S3 with optional format conversion and resizing
 
 ## Configuration
 
-Imgood supports configuration through:
+ImgOod supports configuration through:
 
-1. Command-line flags
-2. Configuration file (`config.yaml`)
-3. Environment variables
+1. Configuration files (`config.toml`)
+2. Environment variables
 
-### Configuration File
+### Configuration File Locations
 
-The tool looks for a `config.toml` file in the following locations:
+The tool looks for a `config.toml` file in the following locations (in order):
 
-- Current directory
-- `~/.imgood/` directory
+1. Current directory (`./config.toml`)
+2. User's home directory (`~/.imgood/config.toml`)
+3. XDG config directory (`~/.config/imgood/config.toml`)
 
-Example `config.toml`:
+### Example Configuration
 
 ```toml
-# Imgood Configuration
+# ImgOod Configuration
 
 # S3 Configuration
 [s3]
-# Default S3 bucket name
+# S3 bucket name (required)
 bucket = "my-images-bucket"
 
-# S3 endpoint URL (for non-AWS S3 services like MinIO)
+# S3 endpoint URL (for non-AWS S3 services)
+# Format: https://s3.example.com
 # Leave empty for AWS S3
-endpoint = "https://minio.example.com"
+endpoint = "https://s3.bitiful.net"
 
-# AWS region
+# AWS region (required for AWS S3)
 region = "us-east-1"
 
 # AWS credentials
@@ -163,27 +96,115 @@ access_key = "your-access-key"
 secret_key = "your-secret-key"
 ```
 
-### Environment Variables
+### Setting Environment Variables
 
-All configuration options can also be set using environment variables with the prefix `IMGOOD_`. For nested configuration options, use underscores to separate the levels.
-
-Examples:
+All configuration options can also be set using environment variables with the prefix `IMGOOD_`:
 
 ```bash
-# Set S3 bucket
+# S3 configuration
 export IMGOOD_S3_BUCKET="my-images-bucket"
-
-# Set AWS region
-export IMGOOD_S3_REGION="eu-west-1"
-
-# Set S3 endpoint for MinIO
-export IMGOOD_S3_ENDPOINT="https://minio.example.com"
-
-# Set AWS credentials
+export IMGOOD_S3_ENDPOINT="https://s3.bitiful.net"
+export IMGOOD_S3_REGION="us-east-1"
 export IMGOOD_S3_ACCESS_KEY="your-access-key"
 export IMGOOD_S3_SECRET_KEY="your-secret-key"
 ```
 
-## Output
+## Command Usage
 
-The compressed image will be saved to the system's temporary directory (`/tmp` on Unix/Linux/macOS) with the naming format `{original_filename}_compressed.{extension}`.
+### Upload Command (`up`)
+
+Upload images to S3 with optional compression and format conversion.
+
+```bash
+imgood up [options]
+```
+
+#### Upload Options
+
+- `-i, --input string`: Path to the input image file (required)
+- `-k, --key string`: S3 object key (path in bucket), defaults to filename
+- `-c, --compress`: Compress image before uploading
+- `-q, --quality int`: Quality of the compressed image (1-100) (default 80)
+- `-w, --width int`: Width of the output image (0 for original)
+- `-h, --height int`: Height of the output image (0 for original)
+
+#### Examples
+
+Upload an image with default settings:
+
+```bash
+imgood up -i sample.jpg
+```
+
+Upload with compression and custom key:
+
+```bash
+imgood up -i sample.jpg -k images/2025/05/sample.jpg -c -q 85
+```
+
+Upload with resizing (converts to WebP format by default):
+
+```bash
+imgood up -i sample.jpg -c -w 800 -h 600
+```
+
+### Copy Command (`cp`)
+
+Copy objects within S3 with optional format conversion and resizing.
+
+```bash
+imgood cp [options]
+```
+
+#### Copy Options
+
+- `-s, --source string`: Source S3 object key to copy (required)
+- `-t, --target string`: Target S3 object key (destination), defaults to source-copy
+- `-f, --format string`: Convert to format (webp, jpeg, png) (default "webp")
+- `-q, --quality int`: Quality of the converted image (1-100) (default 80)
+- `-w, --width int`: Width of the output image (0 for original)
+- `-h, --height int`: Height of the output image (0 for original)
+
+#### Copy Command Examples
+
+Copy an object with default settings (converts to WebP):
+
+```bash
+imgood cp -s images/original.jpg
+```
+
+Copy with specific format and target key:
+
+```bash
+imgood cp -s images/original.jpg -t images/copy.png -f png
+```
+
+Copy with resizing and quality adjustment:
+
+```bash
+imgood cp -s images/original.jpg -w 1200 -h 800 -q 90
+```
+
+## URL Format
+
+When using custom S3 endpoints, Imgood generates URLs in the format:
+
+```text
+https://{bucket}.{endpoint}/{key}
+```
+
+For example, with bucket `imgood` and endpoint `s3.example.com`, the URL would be:
+
+```text
+https://imgood.s3.example.com/path/to/image.jpg
+```
+
+For AWS S3, the standard format is used:
+
+```text
+https://{bucket}.s3.{region}.amazonaws.com/{key}
+```
+
+## License
+
+MIT
