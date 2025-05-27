@@ -1,4 +1,4 @@
-# ImgOod - Image Optimization and S3 Management Tool
+# imgood - Image Optimization and S3 Management Tool
 
 A powerful command-line tool for image optimization, format conversion, and S3 object management, built with [bimg](https://github.com/h2non/bimg) (powered by libvips) and AWS SDK for Go v2.
 
@@ -52,14 +52,14 @@ go build -o imgood ./cmd/imgood
 
 ## Commands
 
-ImgOod provides the following commands:
+imgood provides the following commands:
 
 - `up`: Upload images to S3 with optional compression and format conversion
 - `cp`: Copy objects within S3 with optional format conversion and resizing
 
 ## Configuration
 
-ImgOod supports configuration through:
+imgood supports configuration through:
 
 1. Configuration files (`config.toml`)
 2. Environment variables
@@ -75,8 +75,6 @@ The tool looks for a `config.toml` file in the following locations (in order):
 ### Example Configuration
 
 ```toml
-# ImgOod Configuration
-
 # S3 Configuration
 [s3]
 # S3 bucket name (required)
