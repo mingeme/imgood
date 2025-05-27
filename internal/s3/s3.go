@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	
+
 	"github.com/mingeme/imgood/internal/config"
 )
 
@@ -60,8 +61,9 @@ func (c *Client) UploadFile(key string, data []byte) error {
 func (c *Client) GetFileURL(key string) string {
 	if c.config.Endpoint != "" {
 		// For custom S3 endpoints
-		return fmt.Sprintf("%s/%s/%s", c.config.Endpoint, c.config.Bucket, key)
-	} 
+		// Format: https://imgood.s3.example.com/path/to/file.jpeg
+		return fmt.Sprintf("https://%s.%s/%s", c.config.Bucket, strings.TrimPrefix(c.config.Endpoint, "https://"), key)
+	}
 	// For AWS S3
 	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", c.config.Bucket, c.config.Region, key)
 }
