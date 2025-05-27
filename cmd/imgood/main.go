@@ -3,36 +3,9 @@ package imgood
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/spf13/viper"
+	"github.com/mingeme/imgood/internal/config"
 )
-
-// Initialize configuration from config file and environment variables
-func initConfig() error {
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
-
-	viper.AddConfigPath(".")
-	home, err := os.UserHomeDir()
-	if err == nil {
-		viper.AddConfigPath(filepath.Join(home, ".imgood"))
-	}
-
-	viper.SetEnvPrefix("IMGOOD")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
-	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return fmt.Errorf("error reading config file: %w", err)
-		}
-	}
-
-	return nil
-}
 
 // PrintUsage prints the usage instructions for the tool
 func PrintUsage() {
@@ -88,7 +61,7 @@ func PrintCopyUsage() {
 // Run executes the imgood command
 func Run() {
 	// Initialize configuration
-	if err := initConfig(); err != nil {
+	if err := config.Init(); err != nil {
 		fmt.Printf("Warning: %s\n", err)
 	}
 
