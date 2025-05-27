@@ -22,6 +22,11 @@ type Client struct {
 
 // NewClient creates a new S3 client with the provided configuration
 func NewClient(cfg config.S3Config) (*Client, error) {
+	// Validate required configuration
+	if cfg.Bucket == "" {
+		return nil, fmt.Errorf("S3 bucket name is required")
+	}
+
 	// Configure AWS
 	awsCfg, err := configureAWS(cfg.Region, cfg.AccessKey, cfg.SecretKey)
 	if err != nil {
@@ -55,6 +60,49 @@ func (c *Client) UploadFile(key string, data []byte) error {
 	}
 
 	return nil
+}
+
+// GetObject downloads an object from S3
+func (c *Client) GetObject(key string) ([]byte, error) {
+	ctx := context.Background()
+	result, err := c.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(c.config.Bucket),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting object from S3: %w", err)
+	}
+
+	defer result.Body.Close()
+
+	// Read the object body
+	data := bytes.Buffer{}
+	_, err = data.ReadFrom(result.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading object body: %w", err)
+	}
+
+	return data.Bytes(), nil
+}
+
+// ObjectExists checks if an object exists in S3
+func (c *Client) ObjectExists(key string) (bool, error) {
+	ctx := context.Background()
+	_, err := c.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(c.config.Bucket),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		// Check if the error is because the object doesn't exist
+		if strings.Contains(err.Error(), "NotFound") || strings.Contains(err.Error(), "NoSuchKey") {
+			return false, nil
+		}
+		return false, fmt.Errorf("error checking if object exists: %w", err)
+	}
+
+	return true, nil
 }
 
 // GetFileURL returns the URL for an uploaded file

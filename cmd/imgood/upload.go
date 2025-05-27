@@ -32,11 +32,6 @@ func ExecuteUpload() {
 
 	// Get S3 configuration
 	s3Config := config.GetS3Config()
-	if s3Config.Bucket == "" {
-		fmt.Println("Error: S3 bucket name is required")
-		fmt.Println("Set it in config.toml file or IMGOOD_S3_BUCKET environment variable")
-		os.Exit(1)
-	}
 
 	// Check if input file exists
 	if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
@@ -83,7 +78,8 @@ func ExecuteUpload() {
 	// Create S3 client
 	s3Client, err := s3.NewClient(s3Config)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error: %s\n", err)
+		fmt.Println("Check your S3 configuration in config.toml or environment variables")
 		os.Exit(1)
 	}
 
