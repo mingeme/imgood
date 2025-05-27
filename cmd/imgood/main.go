@@ -1,0 +1,101 @@
+package imgood
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/viper"
+)
+
+// Initialize configuration from config file and environment variables
+func initConfig() error {
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+
+	viper.AddConfigPath(".")
+	home, err := os.UserHomeDir()
+	if err == nil {
+		viper.AddConfigPath(filepath.Join(home, ".imgood"))
+	}
+
+	viper.SetEnvPrefix("IMGOOD")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return fmt.Errorf("error reading config file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// PrintUsage prints the usage instructions for the tool
+func PrintUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  imgood [command] [options]")
+	fmt.Println("\nCommands:")
+	fmt.Println("  up\tUpload an image to S3 with optional compression")
+	fmt.Println("\nFor more information about a command, run:")
+	fmt.Println("  imgood [command] --help")
+}
+
+// PrintUploadUsage prints the usage instructions for the upload command
+func PrintUploadUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  imgood up [options]")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -i, --input string\tPath to the input image file (required)")
+	fmt.Println("  -k, --key string\tS3 object key (path in bucket), defaults to filename")
+	fmt.Println("  -c, --compress\t\tCompress image before uploading")
+	fmt.Println("  -q, --quality int\tQuality of the compressed image (1-100) (default 80)")
+	fmt.Println("  -w, --width int\t\tWidth of the output image (0 for original)")
+	fmt.Println("  -h, --height int\tHeight of the output image (0 for original)")
+	fmt.Println("\nS3 Configuration:")
+	fmt.Println("  Configure S3 settings in config.toml or using environment variables:")
+	fmt.Println("  - IMGOOD_S3_BUCKET\t\tS3 bucket name")
+	fmt.Println("  - IMGOOD_S3_ENDPOINT\t\tS3 endpoint URL (for non-AWS S3 services)")
+	fmt.Println("  - IMGOOD_S3_REGION\t\tAWS region")
+	fmt.Println("  - IMGOOD_S3_ACCESS_KEY\tAWS access key ID")
+	fmt.Println("  - IMGOOD_S3_SECRET_KEY\tAWS secret access key")
+}
+
+// Run executes the imgood command
+func Run() {
+	// Initialize configuration
+	if err := initConfig(); err != nil {
+		fmt.Printf("Warning: %s\n", err)
+	}
+
+	// Check if no arguments provided
+	if len(os.Args) == 1 {
+		PrintUsage()
+		return
+	}
+
+	// Handle subcommands
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "up":
+			// Check if help flag is provided
+			if len(os.Args) > 2 && (os.Args[2] == "--help" || os.Args[2] == "-h") {
+				PrintUploadUsage()
+				return
+			}
+			os.Args = append(os.Args[:1], os.Args[2:]...)
+			ExecuteUpload()
+			return
+		case "--help", "-h":
+			PrintUsage()
+			return
+		default:
+			fmt.Printf("Unknown command: %s\n\n", os.Args[1])
+			PrintUsage()
+			os.Exit(1)
+		}
+	}
+}
