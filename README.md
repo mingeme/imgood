@@ -47,7 +47,7 @@ Or build from source:
 ```bash
 git clone https://github.com/mingeme/imgood.git
 cd imgood
-go build -o imgood ./cmd/imgood
+go build -o imgood main.go
 ```
 
 ## Commands
