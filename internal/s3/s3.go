@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -114,6 +115,53 @@ func (c *Client) GetFileURL(key string) string {
 	}
 	// For AWS S3
 	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", c.config.Bucket, c.config.Region, key)
+}
+
+// S3Object represents an object in S3
+type S3Object struct {
+	Key          string
+	Size         int64
+	LastModified time.Time
+	URL          string
+}
+
+// ListObjects lists objects in the S3 bucket with an optional prefix
+func (c *Client) ListObjects(prefix string, maxKeys int32) ([]S3Object, error) {
+	ctx := context.Background()
+
+	// Create the input for listing objects
+	input := &s3.ListObjectsV2Input{
+		Bucket: aws.String(c.config.Bucket),
+	}
+
+	// Add prefix if provided
+	if prefix != "" {
+		input.Prefix = aws.String(prefix)
+	}
+
+	// Set max keys if provided
+	if maxKeys > 0 {
+		input.MaxKeys = aws.Int32(maxKeys)
+	}
+
+	// List objects
+	result, err := c.s3Client.ListObjectsV2(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error listing objects in S3: %w", err)
+	}
+
+	// Convert to S3Object slice
+	objects := make([]S3Object, 0, len(result.Contents))
+	for _, item := range result.Contents {
+		objects = append(objects, S3Object{
+			Key:          *item.Key,
+			Size:         *item.Size,
+			LastModified: *item.LastModified,
+			URL:          c.GetFileURL(*item.Key),
+		})
+	}
+
+	return objects, nil
 }
 
 // configureAWS sets up the AWS configuration with the provided credentials and region

@@ -14,6 +14,7 @@ func PrintUsage() {
 	fmt.Println("\nCommands:")
 	fmt.Println("  up\tUpload an image to S3 with optional compression")
 	fmt.Println("  cp\tCopy an object in S3 with optional format conversion")
+	fmt.Println("  ls\tList objects in S3 bucket with filtering and sorting options")
 	fmt.Println("\nFor more information about a command, run:")
 	fmt.Println("  imgood [command] --help")
 }
@@ -58,6 +59,25 @@ func PrintCopyUsage() {
 	fmt.Println("  - IMGOOD_S3_SECRET_KEY\tAWS secret access key")
 }
 
+// PrintListUsage prints the usage instructions for the list command
+func PrintListUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  imgood ls [options]")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -p, --prefix string\tPrefix filter for S3 objects")
+	fmt.Println("  -l, --limit int\t\tMaximum number of objects to list (default 100)")
+	fmt.Println("  -s, --sort string\t\tSort by: name, size, date (default \"name\")")
+	fmt.Println("  -d, --desc\t\t\tSort in descending order")
+	fmt.Println("  -u, --urls\t\t\tShow full URLs")
+	fmt.Println("\nS3 Configuration:")
+	fmt.Println("  Configure S3 settings in config.toml or using environment variables:")
+	fmt.Println("  - IMGOOD_S3_BUCKET\t\tS3 bucket name")
+	fmt.Println("  - IMGOOD_S3_ENDPOINT\t\tS3 endpoint URL (for non-AWS S3 services)")
+	fmt.Println("  - IMGOOD_S3_REGION\t\tAWS region")
+	fmt.Println("  - IMGOOD_S3_ACCESS_KEY\tAWS access key ID")
+	fmt.Println("  - IMGOOD_S3_SECRET_KEY\tAWS secret access key")
+}
+
 // Run executes the imgood command
 func Run() {
 	// Initialize configuration
@@ -91,6 +111,15 @@ func Run() {
 			}
 			os.Args = append(os.Args[:1], os.Args[2:]...)
 			ExecuteCopy()
+			return
+		case "ls":
+			// Check if help flag is provided
+			if len(os.Args) > 2 && (os.Args[2] == "--help" || os.Args[2] == "-h") {
+				PrintListUsage()
+				return
+			}
+			os.Args = append(os.Args[:1], os.Args[2:]...)
+			ExecuteList()
 			return
 		case "--help", "-h":
 			PrintUsage()
