@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/mingeme/imgood/cmd/imgood"
+	"github.com/mingeme/imgood/cmd"
 )
 
 func main() {
-	// Run the imgood command
-	imgood.Run()
+	cmd.Run()
 }

@@ -1,4 +1,4 @@
-package imgood
+package cmd
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/h2non/bimg"
 	"github.com/spf13/pflag"
-	
+
 	"github.com/mingeme/imgood/internal/config"
 	"github.com/mingeme/imgood/internal/image"
 	"github.com/mingeme/imgood/internal/s3"
@@ -60,15 +60,15 @@ func ExecuteUpload() {
 			Height:  *height,
 			Format:  bimg.WEBP, // Convert to WebP format for better compression
 		}
-		
+
 		newImage, err := processor.Process(processOpts)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		
+
 		imageData = newImage
-		fmt.Printf("Compressed image: %d bytes (%.2f%% of original)\n", 
+		fmt.Printf("Compressed image: %d bytes (%.2f%% of original)\n",
 			len(newImage), float64(len(newImage))/float64(size)*100)
 	} else {
 		// Use original image

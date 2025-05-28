@@ -1,4 +1,4 @@
-package imgood
+package cmd
 
 import (
 	"fmt"
