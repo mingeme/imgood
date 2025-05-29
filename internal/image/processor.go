@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/h2non/bimg"
 )
@@ -34,7 +35,7 @@ func NewProcessor(filePath string) (*Processor, error) {
 
 	// Create image object
 	originalImage := bimg.NewImage(buffer)
-	
+
 	// Get image size
 	size, err := originalImage.Size()
 	if err != nil {
@@ -87,18 +88,31 @@ func (p *Processor) Process(opts ProcessOptions) ([]byte, error) {
 }
 
 // GetOutputFilename returns an appropriate filename for the processed image
-func GetOutputFilename(inputPath string, compress bool, format bimg.ImageType) string {
+func GetOutputFilename(inputPath string, compress bool, format bimg.ImageType, useTimestamp bool) string {
+	// Determine the appropriate extension
+	var extension string
 	if !compress {
-		return filepath.Base(inputPath)
-	}
-	
-	// If compressing, change the extension based on the format
-	baseName := filepath.Base(inputPath)
-	extension := ".webp"
-	
-	if format != bimg.WEBP {
+		// Keep original extension if not compressing
+		extension = filepath.Ext(inputPath)
+	} else {
 		extension = "." + strings.ToLower(bimg.ImageTypeName(format))
 	}
-	
+
+	// Use timestamp or original filename as base
+	if useTimestamp {
+		// Generate timestamp-based filename with format: YYYYMMDDHHMMSSmmm.ext
+		timestamp := time.Now().Format("20060102150405.000")
+		// replace last dot to empty
+		timestamp = strings.ReplaceAll(timestamp, ".", "")
+		return timestamp + extension
+	}
+
+	baseName := filepath.Base(inputPath)
+	// Use original filename
+	if !compress {
+		return baseName
+	}
+
+	// Remove original extension and add new one
 	return strings.TrimSuffix(baseName, filepath.Ext(baseName)) + extension
 }

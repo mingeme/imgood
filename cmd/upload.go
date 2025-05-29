@@ -21,6 +21,7 @@ func ExecuteUpload() {
 	quality := pflag.IntP("quality", "q", 80, "Quality of the compressed image (1-100)")
 	width := pflag.IntP("width", "w", 0, "Width of the output image (0 for original)")
 	height := pflag.IntP("height", "h", 0, "Height of the output image (0 for original)")
+	useTimestamp := pflag.BoolP("timestamp", "t", false, "Use timestamp as filename when key is not specified")
 	pflag.Parse()
 
 	// Validate required parameters
@@ -85,7 +86,7 @@ func ExecuteUpload() {
 
 	// Set default key if not provided
 	if *key == "" {
-		*key = image.GetOutputFilename(*inputPath, *compress, bimg.WEBP)
+		*key = image.GetOutputFilename(*inputPath, *compress, bimg.WEBP, *useTimestamp)
 	}
 
 	// Upload to S3
