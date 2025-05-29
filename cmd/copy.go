@@ -20,6 +20,7 @@ var (
 	copyConvertFormat string
 	copyQuality       int
 	copyResize        string
+	copyOverwrite     bool
 )
 
 var copyCmd = &cobra.Command{
@@ -29,7 +30,8 @@ var copyCmd = &cobra.Command{
 	Long: `Copy an object in S3 with optional format conversion and resizing.
 	
 Example:
-  imgood cp -s source.jpg -t target.webp -f webp -q 80 -r 800,600`,
+  imgood cp -s source.jpg -t target.webp -f webp -q 80 -r 800,600
+  imgood cp -s source.jpg -t existing.jpg --overwrite  # Overwrite existing file`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Validate required parameters
 		if copySourceKey == "" {
@@ -83,9 +85,13 @@ Example:
 			fmt.Printf("Error checking target object: %s\n", err)
 			os.Exit(1)
 		}
-		if exists {
+		if exists && !copyOverwrite {
 			fmt.Printf("Error: Target object already exists: %s\n", copyTargetKey)
+			fmt.Println("Use --overwrite flag to overwrite existing objects")
 			os.Exit(1)
+		}
+		if exists && copyOverwrite {
+			fmt.Printf("Warning: Overwriting existing object: %s\n", copyTargetKey)
 		}
 
 		// Download the source object
@@ -130,8 +136,11 @@ Example:
 
 			// Create options for processing
 			options := bimg.Options{
-				Quality: copyQuality,
-				Type:    targetFormat,
+				Quality:       copyQuality,
+				Type:          targetFormat,
+				NoProfile:     true,
+				StripMetadata: true,
+				NoAutoRotate:  false,
 			}
 
 			// Set width and height if provided
@@ -142,7 +151,7 @@ Example:
 					if err == nil && width > 0 {
 						options.Width = width
 					}
-					
+
 					height, err := strconv.Atoi(strings.TrimSpace(dimensions[1]))
 					if err == nil && height > 0 {
 						options.Height = height
@@ -192,6 +201,8 @@ func init() {
 
 	// Mark required flags
 	copyCmd.MarkFlagRequired("source")
+
+	copyCmd.Flags().BoolVar(&copyOverwrite, "overwrite", false, "Overwrite target object if it already exists")
 
 	// Add shell completion for flags
 	_ = copyCmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

@@ -19,10 +19,12 @@ type Processor struct {
 
 // ProcessOptions contains options for image processing
 type ProcessOptions struct {
-	Quality int
-	Width   int
-	Height  int
-	Format  bimg.ImageType
+	Quality       int
+	Width         int
+	Height        int
+	Format        bimg.ImageType
+	KeepMetadata  bool
+	NoRotate      bool
 }
 
 // NewProcessor creates a new image processor from a file
@@ -68,6 +70,9 @@ func (p *Processor) Process(opts ProcessOptions) ([]byte, error) {
 	options := bimg.Options{
 		Quality: opts.Quality,
 		Type:    opts.Format,
+		NoProfile: !opts.KeepMetadata,      // Remove ICC profile unless KeepMetadata is true
+		StripMetadata: !opts.KeepMetadata,  // Strip all metadata unless KeepMetadata is true
+		NoAutoRotate: opts.NoRotate,        // Disable auto-rotation if NoRotate is true
 	}
 
 	// Set width and height if provided

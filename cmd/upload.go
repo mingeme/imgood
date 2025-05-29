@@ -21,6 +21,8 @@ var (
 	uploadQuality    int
 	uploadResize     string
 	uploadTimestamp  bool
+	uploadKeepMetadata bool
+	uploadNoRotate    bool
 )
 
 var uploadCmd = &cobra.Command{
@@ -59,15 +61,23 @@ Example:
 		width0, height0, size, format := processor.GetOriginalInfo()
 		fmt.Printf("Original image: %dx%d, %d bytes, format: %s\n", width0, height0, size, format)
 
-		// Process the image if compression is requested
+		// Process the image if compression is requested or if we need to handle EXIF orientation/metadata
 		var imageData []byte
-		if uploadCompress {
+		if uploadCompress || !uploadKeepMetadata || !uploadNoRotate {
 			// Process the image
 			processOpts := image.ProcessOptions{
-				Quality: uploadQuality,
-				Width:   0,
-				Height:  0,
-				Format:  bimg.WEBP, // Convert to WebP format for better compression
+				Quality:      uploadQuality,
+				Width:        0,
+				Height:       0,
+				Format:       bimg.WEBP, // Convert to WebP format for better compression
+				KeepMetadata: uploadKeepMetadata,
+				NoRotate:     uploadNoRotate,
+			}
+			
+			// If not compressing but still processing for orientation/metadata, keep original format
+			if !uploadCompress {
+				imageType := bimg.DetermineImageType(processor.GetOriginalBuffer())
+				processOpts.Format = imageType
 			}
 			
 			// Parse resize parameter if provided
@@ -136,6 +146,8 @@ func init() {
 	uploadCmd.Flags().IntVarP(&uploadQuality, "quality", "q", 80, "Quality of the compressed image (1-100)")
 	uploadCmd.Flags().StringVarP(&uploadResize, "resize", "r", "", "Resize image to width,height (e.g., '800,600'). Use 0 for any dimension to maintain aspect ratio")
 	uploadCmd.Flags().BoolVarP(&uploadTimestamp, "timestamp", "t", false, "Use timestamp as filename when key is not specified")
+	uploadCmd.Flags().BoolVar(&uploadKeepMetadata, "keep-metadata", false, "Keep image metadata (EXIF, etc.)")
+	uploadCmd.Flags().BoolVar(&uploadNoRotate, "no-rotate", false, "Disable automatic rotation based on EXIF orientation")
 
 	// Mark required flags
 	uploadCmd.MarkFlagRequired("input")
